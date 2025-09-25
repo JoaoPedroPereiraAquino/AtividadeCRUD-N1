@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editar Foto - Álbum de Fotos</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .btn-custom {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+        }
+        .btn-custom:hover {
+            background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+            color: white;
+        }
+        .preview-container {
+            max-width: 300px;
+            max-height: 300px;
+            margin: 0 auto;
+        }
+        .preview-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+        .current-image {
+            max-width: 200px;
+            max-height: 200px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-camera me-2"></i>Álbum de Fotos
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/">
+                    <i class="fas fa-arrow-left me-1"></i>Voltar
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card shadow">
+                    <div class="card-header bg-white">
+                        <h4 class="mb-0">
+                            <i class="fas fa-edit me-2"></i>Editar Foto
+                        </h4>
+                    </div>
+                    <div class="card-body">
+                        <!-- Alertas -->
+                        <div th:if="${erro}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="fas fa-exclamation-circle me-2"></i>
+                            <span th:text="${erro}"></span>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+
+                        <form th:action="@{/editar/{id}(id=${atividade.id})}" method="post" enctype="multipart/form-data">
+                            <div class="mb-3">
+                                <label for="texto" class="form-label">
+                                    <i class="fas fa-heading me-1"></i>Título *
+                                </label>
+                                <input type="text" class="form-control" id="texto" name="texto" 
+                                       th:value="${atividade.texto}" required maxlength="255"
+                                       placeholder="Digite o título da foto">
+                                <div class="form-text">Máximo 255 caracteres</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="descricao" class="form-label">
+                                    <i class="fas fa-align-left me-1"></i>Descrição
+                                </label>
+                                <textarea class="form-control" id="descricao" name="descricao" rows="4" 
+                                          th:text="${atividade.descricao}" maxlength="1000"
+                                          placeholder="Digite uma descrição da foto ou memória"></textarea>
+                                <div class="form-text">Máximo 1000 caracteres</div>
+                            </div>
+
+                            <!-- Foto atual -->
+                            <div class="mb-3" th:if="${atividade.urlFoto != null and !atividade.urlFoto.empty}">
+                                <label class="form-label">
+                                    <i class="fas fa-image me-1"></i>Foto Atual
+                                </label>
+                                <div class="text-center">
+                                    <img th:src="${atividade.urlFoto}" class="current-image" alt="Foto atual">
+                                    <div class="mt-2">
+                                        <small class="text-muted">Esta é a foto atual</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="foto" class="form-label">
+                                    <i class="fas fa-camera me-1"></i>Nova Foto
+                                </label>
+                                <input type="file" class="form-control" id="foto" name="foto" 
+                                       accept="image/*" onchange="previewImage(this)">
+                                <div class="form-text">Deixe em branco para manter a foto atual. Formatos aceitos: JPG, PNG, GIF. Máximo 10MB</div>
+                                
+                                <!-- Preview da nova imagem -->
+                                <div id="preview" class="preview-container mt-3" style="display: none;">
+                                    <img id="previewImage" class="preview-image" alt="Preview">
+                                    <div class="text-center mt-2">
+                                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removePreview()">
+                                            <i class="fas fa-times me-1"></i>Remover
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                <a th:href="@{/}" class="btn btn-outline-secondary me-md-2">
+                                    <i class="fas fa-times me-1"></i>Cancelar
+                                </a>
+                                <button type="submit" class="btn btn-custom">
+                                    <i class="fas fa-save me-1"></i>Salvar Alterações
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function previewImage(input) {
+            const preview = document.getElementById('preview');
+            const previewImage = document.getElementById('previewImage');
+            
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    previewImage.src = e.target.result;
+                    preview.style.display = 'block';
+                }
+                
+                reader.readAsDataURL(input.files[0]);
+            } else {
+                preview.style.display = 'none';
+            }
+        }
+        
+        function removePreview() {
+            const preview = document.getElementById('preview');
+            const input = document.getElementById('foto');
+            
+            preview.style.display = 'none';
+            input.value = '';
+        }
+        
+        // Validação do formulário
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const texto = document.getElementById('texto').value.trim();
+            const foto = document.getElementById('foto').files[0];
+            
+            if (!texto) {
+                e.preventDefault();
+                alert('Por favor, preencha o título da foto.');
+                return;
+            }
+            
+            if (foto) {
+                const maxSize = 10 * 1024 * 1024; // 10MB
+                if (foto.size > maxSize) {
+                    e.preventDefault();
+                    alert('O arquivo de foto deve ter no máximo 10MB.');
+                    return;
+                }
+                
+                const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+                if (!allowedTypes.includes(foto.type)) {
+                    e.preventDefault();
+                    alert('Por favor, selecione apenas arquivos de imagem (JPG, PNG, GIF).');
+                    return;
+                }
+            }
+        });
+    </script>
+</body>
+</html>

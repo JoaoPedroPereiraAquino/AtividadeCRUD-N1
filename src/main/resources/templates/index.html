@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meu Álbum de Fotos</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #667eea;
+            --secondary-color: #764ba2;
+            --gradient: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            --text-primary: #2d3748;
+            --text-secondary: #718096;
+            --bg-light: #f7fafc;
+            --border-color: #e2e8f0;
+            --shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            --shadow-hover: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .card-img-top {
+            height: 200px;
+            object-fit: cover;
+        }
+        .stats-card {
+            background: var(--gradient);
+            color: white;
+            border-radius: 20px;
+            border: none;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .stats-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-hover);
+        }
+        .btn-custom {
+            background: var(--gradient);
+            border: none;
+            color: white;
+            border-radius: 12px;
+            padding: 12px 24px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .btn-custom:hover {
+            background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+
+        /* Timeline Styles */
+        .timeline-container {
+            position: relative;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 60px 20px;
+        }
+
+        .timeline-line {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: linear-gradient(180deg, transparent 0%, var(--primary-color) 10%, var(--secondary-color) 90%, transparent 100%);
+            transform: translateX(-50%);
+            border-radius: 2px;
+        }
+
+        .timeline-item {
+            position: relative;
+            margin: 60px 0;
+            display: flex;
+            align-items: center;
+            opacity: 0;
+            animation: fadeInUp 0.8s ease forwards;
+        }
+
+        .timeline-item:nth-child(2n) { animation-delay: 0.2s; }
+        .timeline-item:nth-child(3n) { animation-delay: 0.4s; }
+        .timeline-item:nth-child(4n) { animation-delay: 0.6s; }
+
+        .timeline-item-left {
+            justify-content: flex-end;
+            text-align: right;
+        }
+
+        .timeline-item-right {
+            justify-content: flex-start;
+            text-align: left;
+        }
+
+        .timeline-marker {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            width: 24px;
+            height: 24px;
+            background: white;
+            border-radius: 50%;
+            box-shadow: 0 0 0 4px var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .timeline-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--primary-color);
+            border-radius: 50%;
+        }
+
+        .timeline-content {
+            width: 45%;
+            padding: 0 30px;
+        }
+
+        .timeline-card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .timeline-card:hover {
+            transform: translateY(-8px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .timeline-card::before {
+            content: '';
+            position: absolute;
+            top: 30px;
+            width: 0;
+            height: 0;
+            border: 15px solid transparent;
+        }
+
+        .timeline-item-left .timeline-card::before {
+            right: -30px;
+            border-left-color: white;
+        }
+
+        .timeline-item-right .timeline-card::before {
+            left: -30px;
+            border-right-color: white;
+        }
+
+        .timeline-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--bg-light);
+            padding-bottom: 15px;
+        }
+
+        .timeline-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 0;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .timeline-date {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+            background: var(--bg-light);
+            padding: 6px 12px;
+            border-radius: 20px;
+        }
+
+        .timeline-image {
+            margin: 20px 0;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .timeline-photo {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .timeline-photo:hover {
+            transform: scale(1.05);
+        }
+
+        .timeline-body {
+            margin: 20px 0;
+        }
+
+        .timeline-body p {
+            color: var(--text-secondary);
+            line-height: 1.6;
+            font-size: 1rem;
+            margin: 0;
+        }
+
+        .timeline-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .timeline-btn {
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .timeline-btn-edit {
+            background: #4299e1;
+            color: white;
+        }
+
+        .timeline-btn-edit:hover {
+            background: #3182ce;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .timeline-btn-delete {
+            background: #f56565;
+            color: white;
+        }
+
+        .timeline-btn-delete:hover {
+            background: #e53e3e;
+            transform: translateY(-2px);
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .timeline-line {
+                left: 30px;
+            }
+
+            .timeline-item {
+                justify-content: flex-start !important;
+                text-align: left !important;
+            }
+
+            .timeline-marker {
+                left: 30px;
+            }
+
+            .timeline-content {
+                width: calc(100% - 80px);
+                padding-left: 50px;
+                padding-right: 0;
+            }
+
+            .timeline-card::before {
+                left: -30px !important;
+                right: auto !important;
+                border-right-color: white !important;
+                border-left-color: transparent !important;
+            }
+
+            .timeline-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            .timeline-actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-camera me-2"></i>Álbum de Fotos
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/nova">
+                    <i class="fas fa-plus me-1"></i>Adicionar Foto
+                </a>
+                <a class="nav-link" href="/com-foto">
+                    <i class="fas fa-images me-1"></i>Galeria
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- Alertas -->
+        <div th:if="${sucesso}" class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle me-2"></i>
+            <span th:text="${sucesso}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        
+        <div th:if="${erro}" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-circle me-2"></i>
+            <span th:text="${erro}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+
+        <!-- Estatísticas -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card stats-card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-images fa-2x mb-2"></i>
+                        <h5 class="card-title">Total de Fotos</h5>
+                        <h2 th:text="${totalAtividades}">0</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card stats-card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-heart fa-2x mb-2"></i>
+                        <h5 class="card-title">Favoritas</h5>
+                        <h2 th:text="${atividadesComFoto}">0</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Barra de Busca -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <form method="get" action="/buscar" class="row g-3">
+                            <div class="col-md-5">
+                                <input type="text" name="texto" class="form-control" placeholder="Buscar por título...">
+                            </div>
+                            <div class="col-md-5">
+                                <input type="text" name="descricao" class="form-control" placeholder="Buscar por descrição...">
+                            </div>
+                            <div class="col-md-2">
+                                <button type="submit" class="btn btn-custom w-100">
+                                    <i class="fas fa-search me-1"></i>Buscar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Galeria de Fotos -->
+        <div class="row" th:if="${atividades != null and !atividades.empty}">
+            <div class="col-12">
+                <h4 th:if="${titulo}" th:text="${titulo}">Minhas Fotos</h4>
+                <h4 th:unless="${titulo}">Minhas Fotos</h4>
+            </div>
+        </div>
+
+        <!-- Timeline Layout -->
+        <div class="timeline-container" th:if="${atividades != null and !atividades.empty}">
+            <div class="timeline-line"></div>
+            <div th:each="atividade,iterStat : ${atividades}" class="timeline-item" th:classappend="${iterStat.odd} ? 'timeline-item-right' : 'timeline-item-left'">
+                <div class="timeline-marker">
+                    <div class="timeline-dot"></div>
+                </div>
+                <div class="timeline-content">
+                    <div class="timeline-card">
+                        <div class="timeline-header">
+                            <h3 class="timeline-title" th:text="${atividade.texto}">Título</h3>
+                            <span class="timeline-date" th:text="${#temporals.format(atividade.createdAt, 'dd/MM/yyyy')}">Data</span>
+                        </div>
+                        <div th:if="${atividade.urlFoto != null and !atividade.urlFoto.empty}" class="timeline-image">
+                            <img th:src="${atividade.urlFoto}" alt="Foto do álbum" class="timeline-photo">
+                        </div>
+                        <div class="timeline-body">
+                            <p th:text="${atividade.descricao}">Descrição</p>
+                        </div>
+                        <div class="timeline-actions">
+                            <a th:href="@{/editar/{id}(id=${atividade.id})}" class="timeline-btn timeline-btn-edit">
+                                <i class="fas fa-edit"></i> Editar
+                            </a>
+                            <form th:action="@{/excluir/{id}(id=${atividade.id})}" method="post" style="display: inline;">
+                                <button type="submit" class="timeline-btn timeline-btn-delete" 
+                                        onclick="return confirm('Tem certeza que deseja excluir esta foto?')">
+                                    <i class="fas fa-trash"></i> Excluir
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mensagem quando não há fotos -->
+        <div th:if="${atividades == null or atividades.empty}" class="text-center py-5">
+            <i class="fas fa-camera fa-4x text-muted mb-3"></i>
+            <h4 class="text-muted">Nenhuma foto encontrada</h4>
+            <p class="text-muted">Que tal adicionar sua primeira foto?</p>
+            <a href="/nova" class="btn btn-custom">
+                <i class="fas fa-plus me-2"></i>Adicionar Primeira Foto
+            </a>
+        </div>
+    </div>
+
+    <!-- Formulário oculto para exclusão -->
+    <form id="formExclusao" method="post" style="display: none;">
+        <input type="hidden" name="_method" value="delete">
+    </form>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+
+        // Timeline scroll animations
+        document.addEventListener('DOMContentLoaded', function() {
+            const observerOptions = {
+                threshold: 0.1,
+                rootMargin: '0px 0px -10% 0px'
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.opacity = '1';
+                        entry.target.style.animation = 'fadeInUp 0.8s ease forwards';
+                    }
+                });
+            }, observerOptions);
+
+            // Observe all timeline items
+            const timelineItems = document.querySelectorAll('.timeline-item');
+            timelineItems.forEach((item, index) => {
+                item.style.opacity = '0';
+                item.style.animationDelay = `${index * 0.2}s`;
+                observer.observe(item);
+            });
+
+            // Smooth scroll for navigation
+            const navLinks = document.querySelectorAll('.nav-link');
+            navLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    const href = this.getAttribute('href');
+                    if (href && href.startsWith('#')) {
+                        e.preventDefault();
+                        const target = document.querySelector(href);
+                        if (target) {
+                            target.scrollIntoView({
+                                behavior: 'smooth',
+                                block: 'start'
+                            });
+                        }
+                    }
+                });
+            });
+
+            // Add parallax effect to timeline line
+            const timelineLine = document.querySelector('.timeline-line');
+            if (timelineLine) {
+                window.addEventListener('scroll', () => {
+                    const scrolled = window.pageYOffset;
+                    const parallax = scrolled * 0.5;
+                    timelineLine.style.transform = `translateX(-50%) translateY(${parallax}px)`;
+                });
+            }
+        });
+    </script>
+</body>
+</html>
