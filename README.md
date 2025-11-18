@@ -17,7 +17,8 @@ Esta aplicação foi desenvolvida como um projeto acadêmico para demonstrar a i
 - 🔍 **Sistema de Busca**: Pesquisa por título ou descrição
 - 📱 **Design Responsivo**: Compatível com dispositivos móveis e desktop
 - ⚡ **Performance**: Carregamento rápido com animações suaves
-- 🔒 **Validação**: Validação robusta de formulários e arquivos
+- 🔒 **Autenticação**: Sistema completo de login e validação de tokens OAuth2
+- 🐳 **Docker**: Configuração simplificada com Docker Compose para PostgreSQL
 
 ## 🛠️ Tecnologias Utilizadas
 
@@ -35,17 +36,67 @@ Esta aplicação foi desenvolvida como um projeto acadêmico para demonstrar a i
 - **Font Awesome**: Ícones vetoriais
 
 ### Infraestrutura
-- **Supabase**: Backend-as-a-Service para banco de dados e storage
-- **PostgreSQL**: Banco de dados relacional
+- **Supabase**: Backend-as-a-Service para banco de dados e storage (CRUD de atividades)
+- **PostgreSQL**: Banco de dados relacional (autenticação via Docker)
+- **Docker**: Containerização do banco de dados PostgreSQL
 - **Supabase Storage**: Armazenamento de arquivos na nuvem
+- **OAuth2**: Servidor de autenticação para login e validação de tokens
 - **Maven**: Gerenciamento de dependências e build
 
 ## 📋 Pré-requisitos
 
-- **Java 22** ou superior instalado
+- **Java 21** ou superior instalado
 - **Maven 3.6+** para gerenciamento de dependências
+- **Docker** e **Docker Compose** (para banco de dados de autenticação)
+- **Java 8** ou superior (para o servidor de autenticação)
 - **Conta gratuita no Supabase** ([criar conta](https://supabase.com))
 - **Navegador web moderno** (Chrome, Firefox, Safari, Edge)
+
+## 🚀 Início Rápido
+
+### 1. Configurar Banco de Dados de Autenticação (Docker)
+
+```bash
+# Iniciar PostgreSQL com Docker
+docker-compose up -d
+
+# Verificar se está rodando
+docker-compose ps
+```
+
+Isso criará automaticamente:
+- Banco de dados `auth` na porta 5433
+- Todas as tabelas OAuth2 necessárias
+- Cliente OAuth2 padrão
+- Usuário de teste (teste@teste.com / 123456)
+
+📖 **Guia completo:** Veja [README_DOCKER.md](README_DOCKER.md) para mais detalhes.
+
+### 2. Configurar e Executar o Servidor de Autenticação
+
+```bash
+cd auth-server
+mvn clean install
+mvn spring-boot:run
+```
+
+O servidor estará rodando em: `http://localhost:8082/auth-server`
+
+📖 **Guia completo:** Veja [CONFIGURACAO_AUTH_SERVER.md](CONFIGURACAO_AUTH_SERVER.md) para mais detalhes.
+
+### 3. Executar a Aplicação Principal
+
+```bash
+mvn spring-boot:run
+```
+
+A aplicação estará disponível em: `http://localhost:8080`
+
+### 4. Fazer Login
+
+Acesse `http://localhost:8080/login` e use as credenciais:
+- **Usuário:** teste@teste.com
+- **Senha:** 123456
 
 ## 📁 Estrutura do Projeto
 
@@ -98,6 +149,15 @@ src/
 
 ### Estatísticas
 - `GET /api/atividades/estatisticas` - Obter estatísticas
+
+### Autenticação
+- `POST /api/auth/login` - Fazer login e obter token
+- `POST /api/auth/validate` - Validar token
+- `GET /login` - Página de login
+- `POST /auth/login` - Processar login (web)
+- `POST /auth/logout` - Fazer logout
+
+**Nota:** Todas as rotas (exceto `/login`, `/auth/**` e recursos estáticos) requerem autenticação.
 
 ## 🎨 Interface Web
 

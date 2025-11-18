@@ -319,6 +319,14 @@
                 <a class="nav-link" href="/com-foto">
                     <i class="fas fa-images me-1"></i>Galeria
                 </a>
+                <span class="navbar-text me-3" th:if="${session.username}">
+                    <i class="fas fa-user me-2"></i><span th:text="${session.username}"></span>
+                </span>
+                <form th:action="@{/auth/logout}" method="post" class="d-inline">
+                    <button type="submit" class="btn btn-outline-light btn-sm">
+                        <i class="fas fa-sign-out-alt me-2"></i>Sair
+                    </button>
+                </form>
             </div>
         </div>
     </nav>

@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meu Álbum de Fotos</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #667eea;
+            --secondary-color: #764ba2;
+            --gradient: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        }
+
+        body {
+            background: var(--gradient);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .auth-modal {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 0;
+            width: 100%;
+            max-width: 450px;
+            overflow: hidden;
+            animation: slideUp 0.5s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .auth-header {
+            background: var(--gradient);
+            color: white;
+            padding: 2.5rem 2rem;
+            text-align: center;
+        }
+
+        .auth-header h1 {
+            margin: 0;
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+
+        .auth-header p {
+            margin: 0.5rem 0 0 0;
+            opacity: 0.9;
+            font-size: 0.95rem;
+        }
+
+        .auth-tabs {
+            display: flex;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .auth-tab {
+            flex: 1;
+            padding: 1rem;
+            text-align: center;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            color: #718096;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .auth-tab.active {
+            color: var(--primary-color);
+        }
+
+        .auth-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--gradient);
+        }
+
+        .auth-content {
+            padding: 2rem;
+        }
+
+        .auth-form {
+            display: none;
+        }
+
+        .auth-form.active {
+            display: block;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            color: #2d3748;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        .input-group {
+            position: relative;
+        }
+
+        .input-group-text {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            border: none;
+            color: #718096;
+            z-index: 10;
+        }
+
+        .form-control {
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 12px 16px 12px 45px;
+            font-size: 1rem;
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+            outline: none;
+        }
+
+        .btn-auth {
+            background: var(--gradient);
+            border: none;
+            color: white;
+            border-radius: 12px;
+            padding: 14px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            width: 100%;
+            transition: all 0.3s ease;
+            margin-top: 1rem;
+        }
+
+        .btn-auth:hover {
+            background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .alert {
+            border-radius: 12px;
+            border: none;
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+        }
+
+        .alert-danger {
+            background-color: #fee;
+            color: #c33;
+            border-left: 4px solid #c33;
+        }
+
+        .alert-success {
+            background-color: #efe;
+            color: #3c3;
+            border-left: 4px solid #3c3;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="auth-modal">
+        <div class="auth-header">
+            <h1><i class="fas fa-images me-2"></i>Meu Álbum de Fotos</h1>
+            <p>Acesse sua conta ou crie uma nova</p>
+        </div>
+
+        <div class="auth-tabs">
+            <button class="auth-tab active" onclick="switchTab('login', event)">
+                <i class="fas fa-sign-in-alt me-2"></i>Entrar
+            </button>
+            <button class="auth-tab" onclick="switchTab('register', event)">
+                <i class="fas fa-user-plus me-2"></i>Cadastrar
+            </button>
+        </div>
+
+        <div class="auth-content">
+            <!-- Mensagens de erro/sucesso -->
+            <div th:if="${erro}" class="alert alert-danger" role="alert">
+                <i class="fas fa-exclamation-circle me-2"></i>
+                <span th:text="${erro}"></span>
+            </div>
+            <div th:if="${sucesso}" class="alert alert-success" role="alert">
+                <i class="fas fa-check-circle me-2"></i>
+                <span th:text="${sucesso}"></span>
+            </div>
+
+            <!-- Formulário de Login -->
+            <form id="loginForm" class="auth-form active" th:action="@{/auth/login}" method="post">
+                <div class="form-group">
+                    <label for="login-email" class="form-label">E-mail</label>
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fas fa-envelope"></i>
+                        </span>
+                        <input type="email" 
+                               class="form-control" 
+                               id="login-email" 
+                               name="username" 
+                               placeholder="seu@email.com"
+                               required 
+                               autofocus>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="login-password" class="form-label">Senha</label>
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fas fa-lock"></i>
+                        </span>
+                        <input type="password" 
+                               class="form-control" 
+                               id="login-password" 
+                               name="password" 
+                               placeholder="Digite sua senha"
+                               required>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-auth">
+                    <i class="fas fa-sign-in-alt me-2"></i>Entrar
+                </button>
+            </form>
+
+            <!-- Formulário de Cadastro -->
+            <form id="registerForm" class="auth-form" th:action="@{/auth/register}" method="post">
+                <div class="form-group">
+                    <label for="register-email" class="form-label">E-mail</label>
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fas fa-envelope"></i>
+                        </span>
+                        <input type="email" 
+                               class="form-control" 
+                               id="register-email" 
+                               name="email" 
+                               placeholder="seu@email.com"
+                               required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="register-password" class="form-label">Senha</label>
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fas fa-lock"></i>
+                        </span>
+                        <input type="password" 
+                               class="form-control" 
+                               id="register-password" 
+                               name="password" 
+                               placeholder="Mínimo 6 caracteres"
+                               required
+                               minlength="6">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="register-password-confirm" class="form-label">Confirmar Senha</label>
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fas fa-lock"></i>
+                        </span>
+                        <input type="password" 
+                               class="form-control" 
+                               id="register-password-confirm" 
+                               placeholder="Digite a senha novamente"
+                               required
+                               minlength="6">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-auth">
+                    <i class="fas fa-user-plus me-2"></i>Criar Conta
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function switchTab(tab, event) {
+            // Atualizar tabs
+            document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+            
+            if (event && event.target && event.target.closest('.auth-tab')) {
+                // Se clicou na aba
+                event.target.closest('.auth-tab').classList.add('active');
+            } else {
+                // Se chamado pelo botão, atualizar a aba correspondente
+                const tabs = document.querySelectorAll('.auth-tab');
+                if (tab === 'login') {
+                    tabs[0].classList.add('active');
+                } else {
+                    tabs[1].classList.add('active');
+                }
+            }
+
+            // Atualizar formulários
+            document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+            
+            if (tab === 'login') {
+                document.getElementById('loginForm').classList.add('active');
+                setTimeout(() => document.getElementById('login-email').focus(), 100);
+            } else {
+                document.getElementById('registerForm').classList.add('active');
+                setTimeout(() => document.getElementById('register-email').focus(), 100);
+            }
+        }
+
+        // Validação de confirmação de senha
+        document.getElementById('register-password-confirm').addEventListener('input', function() {
+            const password = document.getElementById('register-password').value;
+            const confirm = this.value;
+            
+            if (password !== confirm) {
+                this.setCustomValidity('As senhas não coincidem');
+            } else {
+                this.setCustomValidity('');
+            }
+        });
+    </script>
+</body>
+</html>
+

@@ -20,6 +20,12 @@ public class WebController {
     @Autowired
     private AtividadeService atividadeService;
 
+    // Redirecionar /login para /auth/login (modal flutuante)
+    @GetMapping("/login")
+    public String loginRedirect() {
+        return "redirect:/auth/login";
+    }
+
     // Página inicial - listar todas as atividades
     @GetMapping
     public String index(Model model) {
