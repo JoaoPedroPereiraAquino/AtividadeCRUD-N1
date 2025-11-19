@@ -182,12 +182,36 @@ try {
                 Pop-Location
             }
         } else {
-            Write-Host "[INFO] Container existe mas não está rodando. Iniciando..." -ForegroundColor Yellow
-            Push-Location (Join-Path $projectRoot "docker")
-            docker-compose up -d
-            Pop-Location
-            if ($LASTEXITCODE -ne 0) {
-                throw "Falha ao iniciar container"
+            Write-Host "[INFO] Container existe mas não está rodando. Removendo e recriando..." -ForegroundColor Yellow
+            try {
+                Push-Location (Join-Path $projectRoot "docker")
+                # Remover container parado primeiro
+                Write-Host "[INFO] Removendo container parado..." -ForegroundColor Gray
+                $downOutput = docker-compose down 2>&1
+                if ($LASTEXITCODE -ne 0) {
+                    Write-Host "[AVISO] Avisos ao remover container (pode ser normal): $downOutput" -ForegroundColor Yellow
+                }
+                Start-Sleep -Seconds 2
+                # Criar e iniciar novamente
+                Write-Host "[INFO] Criando e iniciando container..." -ForegroundColor Gray
+                $upOutput = docker-compose up -d 2>&1
+                $exitCode = $LASTEXITCODE
+                if ($exitCode -ne 0) {
+                    Write-Host "[ERRO] Saída do docker-compose: $upOutput" -ForegroundColor Red
+                    throw "Falha ao iniciar container (código de saída: $exitCode)"
+                }
+                # Verificar se o container realmente iniciou
+                Start-Sleep -Seconds 2
+                $containerStatus = docker ps --filter "name=postgres-auth-server" --format "{{.Status}}" 2>&1
+                if ($containerStatus -and $containerStatus -notmatch "Up") {
+                    Write-Host "[AVISO] Container pode não ter iniciado corretamente. Status: $containerStatus" -ForegroundColor Yellow
+                }
+                Pop-Location
+                Write-Host "[OK] Container reiniciado com sucesso" -ForegroundColor Green
+            } catch {
+                Pop-Location
+                Write-Host "[ERRO] Detalhes do erro: ${_}" -ForegroundColor Red
+                throw "Falha ao reiniciar container: ${_}"
             }
         }
     } else {
