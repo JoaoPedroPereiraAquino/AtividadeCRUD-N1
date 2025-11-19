@@ -9,6 +9,22 @@ O **Meu Álbum de Fotos** é uma aplicação completa que permite organizar, vis
 ### Objetivo
 Esta aplicação foi desenvolvida como um projeto acadêmico para demonstrar a implementação de um sistema CRUD completo, integrando tecnologias modernas de desenvolvimento web com serviços de nuvem.
 
+---
+
+## COMANDO PRINCIPAL PARA EXECUTAR
+
+**Para iniciar toda a aplicação, execute este comando no PowerShell:**
+
+```powershell
+.\scripts\start-aplicacao.ps1
+```
+
+**Este é o único comando necessário!** O script automatiza todo o processo de inicialização.
+
+**Importante:** Certifique-se de que o Docker Desktop está rodando antes de executar o comando.
+
+---
+
 ## Características Principais
 
 - **Gerenciamento de Fotos**: Upload, visualização, edição e exclusão de fotos
@@ -46,13 +62,17 @@ Esta aplicação foi desenvolvida como um projeto acadêmico para demonstrar a i
 
 ## Pré-requisitos
 
+Antes de começar, certifique-se de ter instalado:
+
+- **Docker Desktop** instalado e rodando (obrigatório)
 - **Java 21** ou superior instalado
-- **Maven 3.6+** para gerenciamento de dependências
-- **Docker** e **Docker Compose** (para banco de dados de autenticação)
+- **Maven 3.6+** para gerenciamento de dependências (ou use o Maven Wrapper incluído)
 - **Java 17** ou superior (para o servidor de autenticação)
+- **PowerShell** (Windows) - já vem instalado no Windows
 - **Conta gratuita no Supabase** ([criar conta](https://supabase.com))
 - **Navegador web moderno** (Chrome, Firefox, Safari, Edge)
-- **PowerShell** (Windows) para executar scripts de inicialização
+
+**Importante:** O Docker Desktop deve estar rodando antes de executar o script!
 
 ## Estrutura do Projeto
 
@@ -76,33 +96,134 @@ AtividadeCRUD-N1/
 │   ├── docker-compose.yml    # Configuração do PostgreSQL
 │   └── init-db.sql          # Script de inicialização do banco
 ├── scripts/                  # Scripts de automação
-│   └── start-aplicacao.ps1  # Script para iniciar toda a aplicação
+│   └── start-aplicacao.ps1  # Script principal para iniciar tudo
 ├── pom.xml                  # Configuração Maven da aplicação principal
 ├── mvnw                     # Maven Wrapper (Unix)
 ├── mvnw.cmd                 # Maven Wrapper (Windows)
 └── README.md               # Este arquivo
 ```
 
-## Início Rápido
+## Como Executar a Aplicação
 
-### Opção 1: Usando o Script Automatizado (Recomendado)
+### Método Recomendado: Script Automatizado
 
-A forma mais simples de iniciar toda a aplicação é usando o script PowerShell:
+**RECOMENDADO:** Use o script PowerShell que automatiza todo o processo. É a forma mais simples e confiável.
+
+#### Passo 1: Abrir o Terminal PowerShell
+
+Abra o PowerShell no Windows e navegue até a pasta do projeto:
+
+```powershell
+cd "C:\Atividade CRUD N2\AtividadeCRUD-N1"
+```
+
+#### Passo 2: Executar o Script de Inicialização
+
+**Execute este comando no terminal:**
 
 ```powershell
 .\scripts\start-aplicacao.ps1
 ```
 
-Este script irá:
-1. Verificar e configurar JAVA_HOME automaticamente
-2. Iniciar o Docker container (PostgreSQL na porta 5433)
-3. Iniciar o Auth-Server (porta 8082)
-4. Iniciar a Aplicação Principal (porta 8080)
-5. Aguardar todos os serviços ficarem prontos
+**Este é o comando principal e recomendado para iniciar toda a aplicação.**
 
-**Nota:** O script sempre recarrega serviços que já estão rodando automaticamente.
+**Dica:** Este é o único comando que você precisa executar. O script faz todo o resto automaticamente!
 
-### Opção 2: Iniciar Manualmente
+### Passo 3: Aguardar a Inicialização
+
+O script irá:
+- Verificar se o Docker está rodando
+- Iniciar o PostgreSQL no Docker
+- Iniciar o Auth-Server
+- Iniciar a Aplicação Principal
+- Aguardar todos os serviços ficarem prontos
+
+Você verá mensagens de progresso e, ao final, uma mensagem de sucesso.
+
+### Passo 4: Acessar a Aplicação
+
+Após a inicialização completa, acesse:
+
+**URL:** http://localhost:8080/login
+
+**Credenciais de teste:**
+- **Usuário:** teste@teste.com
+- **Senha:** 123456
+
+---
+
+## Solução de Problemas Rápida
+
+### Se o script não executar:
+
+1. **Verifique se está na pasta correta:**
+   ```powershell
+   Get-Location
+   ```
+   Deve mostrar: `C:\Atividade CRUD N2\AtividadeCRUD-N1`
+
+2. **Verifique se o Docker está rodando:**
+   - Abra o Docker Desktop
+   - Aguarde até que o ícone do Docker fique verde
+   - Execute o script novamente
+
+3. **Se aparecer erro de permissão:**
+   ```powershell
+   Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+   ```
+   Depois execute o script novamente.
+
+---
+
+## Início Rápido
+
+### Forma Recomendada: Script Automatizado
+
+**RECOMENDADO:** A forma mais simples e recomendada de iniciar toda a aplicação é usando o script PowerShell automatizado.
+
+#### Comando para Executar:
+
+```powershell
+.\scripts\start-aplicacao.ps1
+```
+
+**Execute este comando no terminal PowerShell na raiz do projeto.**
+
+#### O que o script faz automaticamente:
+
+1. Verifica e configura JAVA_HOME automaticamente
+2. Inicia o Docker container (PostgreSQL na porta 5433)
+3. Inicia o Auth-Server (porta 8082)
+4. Inicia a Aplicação Principal (porta 8080)
+5. Aguarda todos os serviços ficarem prontos
+6. Recarrega automaticamente serviços que já estão rodando
+
+#### Vantagens do Script:
+
+- **Automático**: Não precisa executar comandos manualmente
+- **Inteligente**: Detecta e recarrega serviços já em execução
+- **Completo**: Inicia todos os serviços na ordem correta
+- **Tratamento de Erros**: Mostra mensagens claras se algo der errado
+- **Validações**: Verifica se Docker, Java e arquivos necessários estão disponíveis
+
+#### Após executar o script:
+
+O script abrirá janelas separadas do PowerShell para cada serviço. Aguarde até ver a mensagem:
+```
+========================================
+  Inicialização Concluída!
+========================================
+```
+
+Depois acesse: `http://localhost:8080/login` e use as credenciais:
+- **Usuário:** teste@teste.com
+- **Senha:** 123456
+
+---
+
+### Opção Alternativa: Iniciar Manualmente
+
+Se preferir iniciar os serviços manualmente (não recomendado):
 
 #### 1. Configurar Banco de Dados de Autenticação (Docker)
 
