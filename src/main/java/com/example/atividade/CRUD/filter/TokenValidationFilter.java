@@ -60,12 +60,17 @@ public class TokenValidationFilter extends OncePerRequestFilter {
                     filterChain.doFilter(request, response);
                     return;
                 } else {
-                    // Token inválido, limpar sessão
+                    // Token inválido, limpar sessão e redirecionar
                     session.invalidate();
+                    if (!path.startsWith("/api/")) {
+                        response.sendRedirect("/auth/login");
+                        return;
+                    }
                 }
             } catch (Exception e) {
                 // Se houver erro ao validar (auth-server não disponível), permitir acesso temporariamente
                 // Isso permite que a aplicação funcione mesmo sem o auth-server rodando
+                System.err.println("Erro ao validar token: " + e.getMessage());
                 filterChain.doFilter(request, response);
                 return;
             }
@@ -73,7 +78,7 @@ public class TokenValidationFilter extends OncePerRequestFilter {
 
         // Se não tem sessão/token, redirecionar para login
         if (!path.startsWith("/api/")) {
-            response.sendRedirect("/login");
+            response.sendRedirect("/auth/login");
             return;
         }
 

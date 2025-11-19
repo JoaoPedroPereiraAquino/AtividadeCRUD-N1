@@ -58,6 +58,14 @@ public class AuthService {
                 return response.getBody();
             }
             throw new RuntimeException("Falha na autenticação");
+        } catch (HttpClientErrorException e) {
+            // Preservar HttpClientErrorException para o controller tratar adequadamente
+            // Log do erro para depuração
+            System.err.println("Erro HTTP ao fazer login: " + e.getStatusCode() + " - " + e.getResponseBodyAsString());
+            throw e;
+        } catch (org.springframework.web.client.ResourceAccessException e) {
+            // Erro de conexão com o auth-server
+            throw new RuntimeException("Não foi possível conectar ao servidor de autenticação. Verifique se o auth-server está rodando em " + authServerUrl, e);
         } catch (Exception e) {
             throw new RuntimeException("Erro ao fazer login: " + e.getMessage(), e);
         }
@@ -111,7 +119,7 @@ public class AuthService {
             Map<String, Object> userData = new HashMap<>();
             userData.put("login", registerRequest.getEmail().toLowerCase());
             userData.put("password", registerRequest.getPassword());
-            userData.put("roles", new String[]{"ROLE_USER"});
+            userData.put("roles", java.util.Arrays.asList("ROLE_USER")); // ManagerController espera List, não array
             userData.put("extra", new HashMap<>());
             
             HttpEntity<Map<String, Object>> request = new HttpEntity<>(userData, headers);
@@ -130,12 +138,23 @@ public class AuthService {
                 return result;
             } catch (org.springframework.web.client.HttpClientErrorException e) {
                 String errorMessage = e.getResponseBodyAsString();
+                System.err.println("Erro HTTP no cadastro: " + e.getStatusCode() + " - " + errorMessage);
+                
                 if (e.getStatusCode().value() == 403) {
                     result.put("success", false);
                     result.put("message", "Cadastro requer permissões de administrador.");
-                } else if (e.getStatusCode().value() == 400 && errorMessage != null && errorMessage.contains("already exists")) {
-                    result.put("success", false);
-                    result.put("message", "Este e-mail já está cadastrado. Tente fazer login.");
+                } else if (e.getStatusCode().value() == 400) {
+                    // Verificar diferentes tipos de erro 400
+                    if (errorMessage != null && (errorMessage.contains("already exists") || errorMessage.contains("já existe") || errorMessage.contains("user_exists"))) {
+                        result.put("success", false);
+                        result.put("message", "Este e-mail já está cadastrado. Tente fazer login.");
+                    } else if (errorMessage != null && errorMessage.contains("obrigatório")) {
+                        result.put("success", false);
+                        result.put("message", "Dados incompletos. Verifique se preencheu todos os campos.");
+                    } else {
+                        result.put("success", false);
+                        result.put("message", "Erro ao realizar cadastro: " + (errorMessage != null ? errorMessage : e.getMessage()));
+                    }
                 } else {
                     result.put("success", false);
                     result.put("message", "Erro ao realizar cadastro: " + (errorMessage != null ? errorMessage : e.getMessage()));

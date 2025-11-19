@@ -9,14 +9,17 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
 public class WebMvcConfig implements WebMvcConfigurer {
 
-    @Autowired
-    private AuthInterceptor authInterceptor;
+    // Interceptor desabilitado - usando apenas o TokenValidationFilter
+    // O filtro é mais adequado para validação de autenticação
+    
+    // @Autowired
+    // private AuthInterceptor authInterceptor;
 
-    @Override
-    public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(authInterceptor)
-                .addPathPatterns("/**")
-                .excludePathPatterns("/login", "/auth/**", "/css/**", "/js/**", "/error");
-    }
+    // @Override
+    // public void addInterceptors(InterceptorRegistry registry) {
+    //     registry.addInterceptor(authInterceptor)
+    //             .addPathPatterns("/**")
+    //             .excludePathPatterns("/login", "/auth/**", "/css/**", "/js/**", "/error");
+    // }
 }
 

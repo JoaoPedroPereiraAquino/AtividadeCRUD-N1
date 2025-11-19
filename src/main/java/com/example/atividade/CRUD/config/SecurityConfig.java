@@ -24,7 +24,7 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/login", "/auth/**", "/css/**", "/js/**", "/error", "/api/auth/**", "/favicon.ico").permitAll()
-                .anyRequest().authenticated() // O filtro fará a validação
+                .anyRequest().permitAll() // Permitir todas as requisições - o filtro fará a validação
             )
             .addFilterBefore(tokenValidationFilter, UsernamePasswordAuthenticationFilter.class);
 

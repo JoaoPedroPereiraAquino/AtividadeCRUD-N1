@@ -44,18 +44,19 @@ public class AuthController {
                 return "redirect:/";
             } else {
                 redirectAttributes.addFlashAttribute("erro", "Erro ao obter token de autenticação");
-                return "redirect:/login";
+                return "redirect:/auth/login";
             }
         } catch (org.springframework.web.client.HttpClientErrorException e) {
-            if (e.getStatusCode().value() == 401) {
+            if (e.getStatusCode().value() == 401 || e.getStatusCode().value() == 400) {
                 redirectAttributes.addFlashAttribute("erro", "Usuário ou senha inválidos");
             } else {
-                redirectAttributes.addFlashAttribute("erro", "Erro ao fazer login: " + e.getMessage());
+                String errorBody = e.getResponseBodyAsString();
+                redirectAttributes.addFlashAttribute("erro", "Erro ao fazer login: " + (errorBody != null ? errorBody : e.getMessage()));
             }
-            return "redirect:/login";
+            return "redirect:/auth/login";
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("erro", "Erro ao fazer login: " + e.getMessage() + ". Verifique se o auth-server está rodando.");
-            return "redirect:/login";
+            redirectAttributes.addFlashAttribute("erro", "Erro ao fazer login: " + e.getMessage() + ". Verifique se o auth-server está rodando em http://localhost:8082");
+            return "redirect:/auth/login";
         }
     }
 
@@ -70,15 +71,15 @@ public class AuthController {
             
             if (result.get("success") != null && (Boolean) result.get("success")) {
                 redirectAttributes.addFlashAttribute("sucesso", "Cadastro realizado com sucesso! Faça login.");
-                return "redirect:/login";
+                return "redirect:/auth/login";
             } else {
                 redirectAttributes.addFlashAttribute("erro", result.get("message") != null ? 
                     result.get("message").toString() : "Erro ao realizar cadastro");
-                return "redirect:/login";
+                return "redirect:/auth/login";
             }
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("erro", "Erro ao realizar cadastro: " + e.getMessage());
-            return "redirect:/login";
+            return "redirect:/auth/login";
         }
     }
 
