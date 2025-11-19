@@ -93,6 +93,10 @@ public class AuthService {
         // O endpoint /manager requer autenticação admin, então precisamos primeiro fazer login como admin
         // e depois criar o usuário
         
+        System.out.println("=== INÍCIO DO CADASTRO ===");
+        System.out.println("Email recebido: " + registerRequest.getEmail());
+        System.out.println("Password length: " + (registerRequest.getPassword() != null ? registerRequest.getPassword().length() : "null"));
+        
         Map<String, Object> result = new HashMap<>();
         
         try {
@@ -101,38 +105,83 @@ public class AuthService {
             TokenResponse adminTokenResponse;
             
             try {
+                System.out.println("Tentando fazer login como admin...");
                 adminTokenResponse = login(adminLogin);
+                System.out.println("Login admin bem-sucedido! Token obtido.");
+            } catch (HttpClientErrorException e) {
+                result.put("success", false);
+                String errorMsg = e.getResponseBodyAsString();
+                System.err.println("Erro ao autenticar admin para cadastro: " + e.getStatusCode() + " - " + errorMsg);
+                if (e.getStatusCode().value() == 400 && errorMsg != null && errorMsg.contains("Invalid username or password")) {
+                    result.put("message", "Erro interno: Credenciais de administrador inválidas. Contate o suporte.");
+                } else {
+                    result.put("message", "Erro ao autenticar administrador. Verifique se o auth-server está rodando.");
+                }
+                return result;
             } catch (Exception e) {
                 result.put("success", false);
+                System.err.println("Erro inesperado ao autenticar admin: " + e.getMessage());
+                e.printStackTrace();
                 result.put("message", "Erro ao autenticar administrador. Verifique se o auth-server está rodando.");
                 return result;
             }
             
             // Agora criar o usuário usando o token de admin
             String url = authServerUrl + "/manager";
+            System.out.println("URL completa para criar usuário: " + url);
             
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.setBearerAuth(adminTokenResponse.getAccess_token());
+            String token = adminTokenResponse.getAccess_token();
+            System.out.println("Token completo (length: " + token.length() + "): " + token.substring(0, Math.min(50, token.length())) + "...");
+            headers.setBearerAuth(token);
             
             // Preparar dados do usuário conforme esperado pelo auth-server
             Map<String, Object> userData = new HashMap<>();
-            userData.put("login", registerRequest.getEmail().toLowerCase());
+            String login = registerRequest.getEmail().toLowerCase();
+            userData.put("login", login);
             userData.put("password", registerRequest.getPassword());
             userData.put("roles", java.util.Arrays.asList("ROLE_USER")); // ManagerController espera List, não array
             userData.put("extra", new HashMap<>());
             
+            System.out.println("Dados do usuário preparados: " + userData);
+            System.out.println("Login: " + login);
+            System.out.println("Password: " + (registerRequest.getPassword() != null ? "***" : "null"));
+            
             HttpEntity<Map<String, Object>> request = new HttpEntity<>(userData, headers);
             
             try {
-                ResponseEntity<Map> response = restTemplate.postForEntity(url, request, Map.class);
+                System.out.println("=== TENTANDO CRIAR USUÁRIO ===");
+                System.out.println("URL: " + url);
+                System.out.println("Email: " + registerRequest.getEmail());
+                System.out.println("Headers: " + headers);
+                
+                System.out.println("Fazendo requisição POST para " + url + "...");
+                ResponseEntity<Map> response;
+                try {
+                    response = restTemplate.postForEntity(url, request, Map.class);
+                } catch (org.springframework.web.client.RestClientException e) {
+                    System.err.println("ERRO na requisição RestTemplate: " + e.getClass().getName() + " - " + e.getMessage());
+                    e.printStackTrace();
+                    throw e;
+                }
+                
+                System.out.println("Resposta recebida - Status: " + response.getStatusCode());
+                System.out.println("Resposta recebida - Body: " + response.getBody());
                 
                 if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                    Map<String, Object> responseBody = response.getBody();
+                    Boolean success = (Boolean) responseBody.get("success");
+                    String message = (String) responseBody.get("message");
+                    
+                    System.out.println("SUCESSO no cadastro - success: " + success + ", message: " + message);
+                    
                     result.put("success", true);
-                    result.put("message", "Cadastro realizado com sucesso!");
+                    result.put("message", message != null ? message : "Cadastro realizado com sucesso!");
                     return result;
                 }
                 
+                System.err.println("ERRO: Resposta não foi bem-sucedida");
                 result.put("success", false);
                 result.put("message", "Erro ao realizar cadastro");
                 return result;
@@ -160,10 +209,18 @@ public class AuthService {
                     result.put("message", "Erro ao realizar cadastro: " + (errorMessage != null ? errorMessage : e.getMessage()));
                 }
                 return result;
+            } catch (Exception e) {
+                System.err.println("ERRO GERAL no cadastro: " + e.getMessage());
+                e.printStackTrace();
+                result.put("success", false);
+                result.put("message", "Erro ao realizar cadastro: " + e.getMessage());
+                return result;
             }
         } catch (Exception e) {
+            System.err.println("ERRO CRÍTICO no método register: " + e.getMessage());
+            e.printStackTrace();
             result.put("success", false);
-            result.put("message", "Erro ao realizar cadastro: " + e.getMessage());
+            result.put("message", "Erro inesperado ao realizar cadastro: " + e.getMessage());
             return result;
         }
     }

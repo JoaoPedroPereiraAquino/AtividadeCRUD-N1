@@ -26,11 +26,15 @@ public class TokenValidationFilter extends OncePerRequestFilter {
         
         // Permitir acesso às rotas públicas
         if (path.equals("/login") || path.equals("/auth/login") || 
+            path.equals("/auth/register") ||
             path.startsWith("/css/") || path.startsWith("/js/") ||
             path.startsWith("/api/auth/") || path.equals("/auth/logout")) {
+            System.out.println("TokenValidationFilter: Permitindo acesso público para: " + path);
             filterChain.doFilter(request, response);
             return;
         }
+        
+        System.out.println("TokenValidationFilter: Verificando autenticação para: " + path);
 
         // Para rotas da API, validar token no header Authorization
         if (path.startsWith("/api/")) {
@@ -76,8 +80,9 @@ public class TokenValidationFilter extends OncePerRequestFilter {
             }
         }
 
-        // Se não tem sessão/token, redirecionar para login
-        if (!path.startsWith("/api/")) {
+        // Se não tem sessão/token, redirecionar para login (exceto rotas públicas)
+        if (!path.startsWith("/api/") && !path.equals("/auth/register") && !path.equals("/auth/login")) {
+            System.out.println("TokenValidationFilter: Redirecionando para login - path: " + path);
             response.sendRedirect("/auth/login");
             return;
         }

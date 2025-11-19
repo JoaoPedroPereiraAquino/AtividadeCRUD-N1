@@ -178,6 +178,80 @@
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
         }
 
+        .btn-auth:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-auth.loading {
+            position: relative;
+            color: transparent;
+        }
+
+        .btn-auth.loading::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            top: 50%;
+            left: 50%;
+            margin-left: -10px;
+            margin-top: -10px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .btn-auth.success {
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+        }
+
+        .btn-auth.error {
+            background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+        }
+
+        .register-message {
+            margin-top: 1rem;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            display: none;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        .register-message.show {
+            display: block;
+        }
+
+        .register-message.success {
+            background-color: #c6f6d5;
+            color: #22543d;
+            border-left: 4px solid #48bb78;
+        }
+
+        .register-message.error {
+            background-color: #fed7d7;
+            color: #742a2a;
+            border-left: 4px solid #f56565;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
         .alert {
             border-radius: 12px;
             border: none;
@@ -312,9 +386,10 @@
                     </div>
                 </div>
 
-                <button type="submit" class="btn btn-auth">
+                <button type="submit" class="btn btn-auth" id="registerSubmitBtn">
                     <i class="fas fa-user-plus me-2"></i>Criar Conta
                 </button>
+                <div id="registerMessage" class="register-message"></div>
             </form>
         </div>
     </div>
@@ -361,6 +436,141 @@
                 this.setCustomValidity('');
             }
         });
+
+        // Interceptar submit do formulário de cadastro
+        document.getElementById('registerForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('registerSubmitBtn');
+            const messageDiv = document.getElementById('registerMessage');
+            const form = this;
+            
+            // Validar confirmação de senha
+            const password = document.getElementById('register-password').value;
+            const confirmPassword = document.getElementById('register-password-confirm').value;
+            
+            if (password !== confirmPassword) {
+                showRegisterMessage('As senhas não coincidem', 'error');
+                return;
+            }
+            
+            // Estado de loading
+            submitBtn.disabled = true;
+            submitBtn.classList.add('loading');
+            submitBtn.classList.remove('success', 'error');
+            messageDiv.classList.remove('show', 'success', 'error');
+            
+            // Coletar dados do formulário
+            const formData = new FormData(form);
+            const data = {
+                email: formData.get('email'),
+                password: formData.get('password')
+            };
+            
+            try {
+                console.log('=== JAVASCRIPT: Iniciando requisição de cadastro ===');
+                console.log('URL: /auth/register');
+                console.log('Data:', data);
+                
+                const response = await fetch('/auth/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    },
+                    body: new URLSearchParams(data)
+                });
+                
+                console.log('Resposta recebida - Status:', response.status);
+                console.log('Resposta recebida - Headers:', response.headers);
+                
+                // Tentar ler resposta como JSON
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    const result = await response.json();
+                    if (result.success) {
+                        showRegisterSuccess(result.message || 'Cadastro realizado com sucesso!');
+                        // Limpar formulário
+                        form.reset();
+                        setTimeout(() => {
+                            // Mudar para aba de login após 2 segundos
+                            switchTab('login', null);
+                            showRegisterMessage('', ''); // Limpar mensagem
+                            resetButton();
+                        }, 2000);
+                    } else {
+                        showRegisterError(result.message || 'Erro ao realizar cadastro');
+                        resetButton();
+                    }
+                } else {
+                    // Se não for JSON, verificar status HTTP
+                    if (response.ok || response.status === 200) {
+                        showRegisterSuccess('Cadastro realizado com sucesso!');
+                        form.reset();
+                        setTimeout(() => {
+                            switchTab('login', null);
+                            showRegisterMessage('', '');
+                            resetButton();
+                        }, 2000);
+                    } else {
+                        // Tentar ler como texto para ver se há mensagem de erro
+                        const text = await response.text();
+                        const errorMsg = text || 'Erro ao realizar cadastro. Tente novamente.';
+                        showRegisterError(errorMsg);
+                        resetButton();
+                    }
+                }
+            } catch (error) {
+                console.error('=== JAVASCRIPT: Erro ao fazer cadastro ===');
+                console.error('Tipo de erro:', error.name);
+                console.error('Mensagem:', error.message);
+                console.error('Stack:', error.stack);
+                showRegisterError('Erro ao conectar com o servidor. Verifique sua conexão.');
+                resetButton();
+            }
+        });
+        
+        function showRegisterMessage(message, type) {
+            const messageDiv = document.getElementById('registerMessage');
+            const submitBtn = document.getElementById('registerSubmitBtn');
+            
+            if (!message || message.trim() === '') {
+                messageDiv.classList.remove('show', 'success', 'error');
+                messageDiv.textContent = '';
+                return;
+            }
+            
+            messageDiv.textContent = message;
+            messageDiv.className = `register-message show ${type}`;
+            
+            if (type === 'success') {
+                submitBtn.classList.add('success');
+                submitBtn.classList.remove('error', 'loading');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-check-circle me-2"></i>Conta Criada!';
+            } else if (type === 'error') {
+                submitBtn.classList.add('error');
+                submitBtn.classList.remove('success', 'loading');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-user-plus me-2"></i>Criar Conta';
+            }
+        }
+        
+        function showRegisterSuccess(message) {
+            showRegisterMessage(message, 'success');
+        }
+        
+        function showRegisterError(message) {
+            showRegisterMessage(message, 'error');
+        }
+        
+        function resetButton() {
+            const submitBtn = document.getElementById('registerSubmitBtn');
+            submitBtn.disabled = false;
+            submitBtn.classList.remove('loading', 'success', 'error');
+            submitBtn.innerHTML = '<i class="fas fa-user-plus me-2"></i>Criar Conta';
+        }
     </script>
 </body>
 </html>
